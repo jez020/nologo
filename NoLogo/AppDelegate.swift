@@ -2,13 +2,15 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
+    private var appearanceObservation: NSKeyValueObservation?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DebugEventLogger.record(category: "app", action: "launch", outcome: "started")
-        // Load the bundled icon directly so the Dock does not retain a cached placeholder.
-        if let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
-           let icon = NSImage(contentsOf: iconURL) {
-            NSApplication.shared.applicationIconImage = icon
+        refreshApplicationIcon()
+        appearanceObservation = NSApplication.shared.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            MainActor.assumeIsolated {
+                self?.refreshApplicationIcon()
+            }
         }
         UpdateManager.shared.start()
         ShortcutSettings.shared.activateGlobalShortcut()
@@ -20,6 +22,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.register(defaults: ["showDockIcon": true])
         let showDockIcon = UserDefaults.standard.bool(forKey: "showDockIcon")
         NSApplication.shared.setActivationPolicy(showDockIcon ? .regular : .accessory)
+    }
+
+    private func refreshApplicationIcon() {
+        // The debug launcher can show AppKit's generic placeholder even though the
+        // compiled Icon Composer resource is valid. Resolve the bundle icon through
+        // Launch Services and refresh it whenever the system appearance changes.
+        NSApplication.shared.applicationIconImage = NSWorkspace.shared.icon(
+            forFile: Bundle.main.bundlePath
+        )
     }
 
     func applicationDidUpdate(_ notification: Notification) {

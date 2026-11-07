@@ -175,7 +175,11 @@ struct SettingsView: View {
         .frame(width: 480, height: 620)
         .task { await model.refresh() }
         .onChange(of: showDockIcon) { _, show in
-            NSApplication.shared.setActivationPolicy(show ? .regular : .accessory)
+            let application = NSApplication.shared
+            application.setActivationPolicy(show ? .regular : .accessory)
+            if show {
+                application.activate()
+            }
         }
         .onDisappear { shortcuts.stopRecording() }
         .onChange(of: scenePhase) { _, phase in
