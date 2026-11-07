@@ -2,7 +2,10 @@
 
 NoLogo is a small macOS app for turning your MacBook Pro’s logo light on or off.
 
-[Download NoLogo](https://github.com/jez020/nologo/releases/latest) · [View releases](https://github.com/jez020/nologo/releases) · [Report an issue](https://github.com/jez020/nologo/issues)
+[Website](https://jez020.github.io/nologo/) · [Download NoLogo](https://github.com/jez020/nologo/releases/latest) · [View releases](https://github.com/jez020/nologo/releases) · [Report an issue](https://github.com/jez020/nologo/issues)
+
+The website source lives in [`docs/`](docs/). GitHub Pages publishes it alongside the
+Sparkle update feed whenever the latest release is published.
 
 ## Features
 

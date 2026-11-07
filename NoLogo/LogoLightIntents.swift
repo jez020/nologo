@@ -5,9 +5,9 @@ struct TurnLogoLightOnIntent: AppIntent {
     static let description = IntentDescription("Turns on this Mac’s logo light. Complete setup in NoLogo first.")
     static var supportedModes: IntentModes { .background }
 
-    func perform() async throws -> some IntentResult {
+    func perform() async throws -> some IntentResult & ProvidesDialog {
         try await LogoLightIntentAction.setEnabled(true)
-        return .result()
+        return .result(dialog: "The logo light is on.")
     }
 }
 
@@ -16,9 +16,9 @@ struct TurnLogoLightOffIntent: AppIntent {
     static let description = IntentDescription("Turns off this Mac’s logo light. Complete setup in NoLogo first.")
     static var supportedModes: IntentModes { .background }
 
-    func perform() async throws -> some IntentResult {
+    func perform() async throws -> some IntentResult & ProvidesDialog {
         try await LogoLightIntentAction.setEnabled(false)
-        return .result()
+        return .result(dialog: "The logo light is off.")
     }
 }
 
