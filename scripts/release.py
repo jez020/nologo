@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""Package an exported NoLogo.app and optionally publish its signed update."""
+import argparse
+import base64
+import plistlib
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tempfile
+import urllib.error
+import urllib.request
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+REPO = 'jez020/nologo'
+NS = '{http://www.andymatuschak.org/xml-namespaces/sparkle}'
+
+
+def run(*args, capture=False):
+    return subprocess.run([str(a) for a in args], check=True, text=True,
+                          stdout=subprocess.PIPE if capture else None).stdout
+
+
+def version_tuple(value):
+    if not re.fullmatch(r'\d+(?:\.\d+){0,2}', value):
+        raise ValueError('Use numeric versions and increasing numeric build numbers.')
+    parts = tuple(map(int, value.split('.')))
+    return parts + (0,) * (3 - len(parts))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('app', type=Path, help='Exported, notarized NoLogo.app')
+    parser.add_argument('--publish', action='store_true', help='Publish release and trigger feed deployment')
+    parser.add_argument('--first-release', action='store_true', help='Allow an empty feed if hosting returns HTTP 404')
+    parser.add_argument('--sparkle-bin', type=Path, help='Sparkle bin directory; normally auto-discovered')
+    parser.add_argument('--account', default='ed25519', help='Sparkle Keychain account')
+    parser.add_argument('--notes', type=Path, help='Release notes file; otherwise GitHub generates notes')
+    args = parser.parse_args()
+    app = args.app.resolve()
+    with (app / 'Contents/Info.plist').open('rb') as file:
+        info = plistlib.load(file)
+    with (ROOT / 'NoLogo/Info.plist').open('rb') as file:
+        config = plistlib.load(file)
+    if app.name != 'NoLogo.app' or info.get('CFBundleIdentifier') != 'com.jez020.nologo':
+        raise ValueError('Choose the exported NoLogo.app.')
+    for key in ('SUFeedURL', 'SUPublicEDKey'):
+        if info.get(key) != config[key]:
+            raise ValueError(f'Exported app has a different {key}. Export the current configuration.')
+    version, build = str(info['CFBundleShortVersionString']), str(info['CFBundleVersion'])
+    version_tuple(version)
+    new_build = version_tuple(build)
+    tag = 'v' + version
+    tools = args.sparkle_bin
+    if tools is None:
+        candidates = list((Path.home() / 'Library/Developer/Xcode/DerivedData').glob(
+            'NoLogo-*/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast'))
+        if not candidates:
+            raise ValueError('Build in Xcode first, or pass --sparkle-bin.')
+        tools = max(candidates, key=lambda p: p.stat().st_mtime).parent
+    key = run(tools / 'generate_keys', '--account', args.account, '-p', capture=True).strip()
+    if key != config['SUPublicEDKey']:
+        raise ValueError('Keychain signing key does not match the app. Keep the existing key.')
+    run('codesign', '--verify', '--deep', '--strict', app)
+    run('spctl', '--assess', '--type', 'execute', app)
+    run('xcrun', 'stapler', 'validate', app)
+    run('gh', 'auth', 'status')
+    # Require a pushed source tag instead of silently tagging an unrelated branch tip.
+    run('gh', 'api', f'repos/{REPO}/git/ref/tags/{tag}', capture=True)
+    try:
+        with urllib.request.urlopen(config['SUFeedURL'], timeout=30) as response:
+            previous_feed = response.read()
+    except urllib.error.HTTPError as error:
+        if error.code != 404 or not args.first_release:
+            raise
+        previous_feed = (ROOT / 'docs/appcast.xml').read_bytes()
+        if ET.fromstring(previous_feed).findall('channel/item'):
+            raise ValueError('First-release fallback must be an empty feed.')
+    for item in ET.fromstring(previous_feed).findall('channel/item'):
+        enclosure = item.find('enclosure')
+        previous = item.findtext(NS + 'version')
+        if previous is None and enclosure is not None:
+            previous = enclosure.get(NS + 'version')
+        if previous and new_build <= version_tuple(previous):
+            raise ValueError(f'Build {build} must be newer than published build {previous}.')
+    output = Path(tempfile.mkdtemp(prefix=f'NoLogo-{version}-'))
+    print(f'Release files: {output}', flush=True)
+    archive, feed = output / f'NoLogo-{version}.zip', output / 'appcast.xml'
+    feed.write_bytes(previous_feed)
+    run('ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', app, archive)
+    prefix = f'https://github.com/{REPO}/releases/download/{tag}/'
+    run(tools / 'generate_appcast', '--account', args.account, '--download-url-prefix', prefix,
+        '--maximum-deltas', '0', '--maximum-versions', '0', output)
+    matches = [e for e in ET.parse(feed).findall('channel/item/enclosure')
+               if e.get('url') == prefix + archive.name]
+    if len(matches) != 1:
+        raise ValueError('Generated feed has an unexpected download URL.')
+    enclosure = matches[0]
+    signature = base64.b64decode(enclosure.get(NS + 'edSignature', ''), validate=True)
+    if len(signature) != 64 or int(enclosure.get('length', '0')) != archive.stat().st_size:
+        raise ValueError('Generated feed has an invalid signature or archive size.')
+    if not args.publish:
+        print('Prepared and validated. Add --publish to publish this version.')
+        return
+    notes = ['--notes-file', args.notes.resolve()] if args.notes else ['--generate-notes']
+    # Upload privately first; publish only after both assets are uploaded.
+    run('gh', 'release', 'create', tag, archive, feed, '--repo', REPO,
+        '--verify-tag', '--draft', '--title', f'NoLogo {version}', *notes)
+    run('gh', 'release', 'edit', tag, '--repo', REPO, '--draft=false', '--latest')
+    print(f'Published NoLogo {version}. Check Actions → Publish NoLogo updates for deployment.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, ET.ParseError, subprocess.CalledProcessError) as error:
+        sys.exit(f'Release stopped: {error}')
