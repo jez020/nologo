@@ -3,11 +3,13 @@
 Repository: https://github.com/jez020/NoLogo
 Update feed: https://jez020.github.io/NoLogo/appcast.xml
 
-## Required next step
+## Configuration status
 
-The current target is missing the Sparkle dependency. In Xcode, choose File > Add Package Dependencies, enter https://github.com/sparkle-project/Sparkle, select a stable 2.x release, and add the Sparkle product to NoLogo. Rebuild to validate the actual updater.
+Sparkle 2.10.1 is resolved and its product is linked to NoLogo. The target uses NoLogo/Info.plist together with generated bundle metadata, so SUFeedURL and SUPublicEDKey are included in the built app. Hardened Runtime is enabled.
 
-Development builds currently succeed with updates disabled when the package is missing. Release builds intentionally fail without it. The restored development fallback has been built successfully; the Sparkle execution path and an end-to-end update still need validation after adding the dependency.
+The configured public key was verified against Sparkle’s default Keychain account using generate_keys -p. Keep this key for subsequent releases.
+
+The app builds successfully. The configured GitHub Pages feed currently returns HTTP 404; publish the feed using the workflow below before distributing the app. The checked-in feed is empty and advertises no updates. Installation and relaunch still need an end-to-end check using two signed releases.
 
 ## App configuration
 

@@ -15,7 +15,9 @@ enum LogoLightController {
     }
 
     static var isInstalled: Bool {
+        // Either artifact must remain removable after a partial installation.
         FileManager.default.fileExists(atPath: LogoLightHelperConfiguration.installationDirectory)
+            || FileManager.default.fileExists(atPath: LogoLightHelperConfiguration.launchDaemonPath)
     }
 
     static func checkConnection() async throws {
@@ -189,28 +191,31 @@ enum LogoLightController {
         end try
         """
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let process = Process()
-            let output = Pipe()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            process.arguments = ["-e", script]
-            process.standardOutput = output
-            process.standardError = output
-            process.terminationHandler = { process in
-                let data = output.fileHandleForReading.readDataToEndOfFile()
-                let message = String(decoding: data, as: UTF8.self)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                if process.terminationStatus != 0 {
-                    continuation.resume(throwing: ControlError.failed(message))
-                } else if message == "cancelled" {
-                    continuation.resume(throwing: ControlError.cancelled)
-                } else {
-                    continuation.resume()
+            // Drain output while osascript is running; waiting for termination first
+            // can deadlock when an installation error fills the pipe.
+            DispatchQueue.global(qos: .userInitiated).async {
+                let process = Process()
+                let output = Pipe()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+                process.arguments = ["-e", script]
+                process.standardOutput = output
+                process.standardError = output
+                do {
+                    try process.run()
+                    let data = output.fileHandleForReading.readDataToEndOfFile()
+                    process.waitUntilExit()
+                    let message = String(decoding: data, as: UTF8.self)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if process.terminationStatus != 0 {
+                        continuation.resume(throwing: ControlError.failed(message))
+                    } else if message == "cancelled" {
+                        continuation.resume(throwing: ControlError.cancelled)
+                    } else {
+                        continuation.resume()
+                    }
+                } catch {
+                    continuation.resume(throwing: error)
                 }
-            }
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(throwing: error)
             }
         }
     }

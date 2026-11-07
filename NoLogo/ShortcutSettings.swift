@@ -75,7 +75,8 @@ final class ShortcutSettings {
                 guard !event.isARepeat else { return nil }
                 let flags = event.modifierFlags
                 let candidate = Binding(
-                    key: event.charactersIgnoringModifiers?.lowercased() ?? "",
+                    // charactersIgnoringModifiers still applies Shift (for example, 1 becomes !).
+                    key: event.characters(byApplyingModifiers: [])?.lowercased() ?? "",
                     command: flags.contains(.command),
                     option: flags.contains(.option),
                     control: flags.contains(.control),
