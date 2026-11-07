@@ -73,7 +73,6 @@ private struct LoginSettingsSection: View {
 struct SettingsView: View {
     var model: LogoLightModel = .shared
     @AppStorage("showDockIcon") private var showDockIcon = true
-    @State private var updates = UpdateManager.shared
     @State private var shortcuts = ShortcutSettings.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var confirmsRemoval = false
@@ -82,20 +81,6 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Info") {
-                LabeledContent("App", value: "NoLogo")
-                LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")
-                LabeledContent("Build", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")
-            }
-
-            Section("Updates") {
-                Button("Check for Updates…") { updates.checkForUpdates() }
-                    .disabled(!updates.canCheckForUpdates)
-                if let message = updates.configurationMessage {
-                    Text(message).foregroundStyle(.secondary)
-                }
-            }
-
             LoginSettingsSection()
 
             Section("App appearance") {
@@ -136,6 +121,12 @@ struct SettingsView: View {
                      ? shortcuts.message
                      : "Works in any app while NoLogo is running, even with its Dock icon hidden. Complete helper setup first.")
                     .foregroundStyle(.secondary)
+            }
+
+            Section("Info") {
+                LabeledContent("App", value: "NoLogo")
+                LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")
+                LabeledContent("Build", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")
             }
         }
         .formStyle(.grouped)
