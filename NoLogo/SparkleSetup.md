@@ -7,18 +7,22 @@ and existing feed URL stable so installed apps keep working.
 ## One-time setup
 
 1. Install GitHub CLI (`brew install gh`) and run `gh auth login` with access to jez020/nologo.
-2. Push this release script and `.github/workflows/publish.yml` to the repository’s default branch.
+2. Merge this release script and `.github/workflows/publish.yml` into the protected `main` branch.
 3. In GitHub Settings → Pages, select **GitHub Actions**.
 4. Build NoLogo in Xcode once to download Sparkle’s signing tools. The existing matching
    private key must be in your login Keychain. The script checks its public key without exporting secrets.
 
 ## Each release
 
-1. Increase **Version** and **Build** in Xcode. Commit the release source and push its matching tag:
-   `git tag v1.0.1 && git push origin v1.0.1`.
-2. Archive that source in Xcode. Distribute with **Developer ID**, notarize, and export
+1. In Xcode, create a branch named for the version, such as `release-v1.0.1`.
+2. Increase **Version** and **Build**, update `release-notes.md`, commit the release source,
+   and push the `release-v1.0.1` branch from Xcode.
+3. Open a pull request from `release-v1.0.1` into the protected `main` branch. Complete review
+   and merge it. Do not generate a stable update from the release branch.
+4. In Xcode, switch to `main` and pull so local `main` exactly matches `origin/main`.
+5. Archive the merged source in Xcode. Distribute with **Developer ID**, notarize, and export
    the stapled **NoLogo.app**.
-3. Publish:
+6. Publish from the clean local `main` checkout:
 
    ```sh
    python3 scripts/release.py "/path/to/NoLogo.app" --publish
@@ -44,16 +48,11 @@ and signs the update. It uploads the ZIP and appcast to a draft release, then pu
 it. The **Publish NoLogo updates** workflow deploys the release’s appcast to GitHub Pages.
 There is no manual XML editing, asset uploading, or feed commit.
 
-The matching source tag must exist on GitHub, or pass `--target FULL_COMMIT_SHA`
-to create it during publication from the pushed commit you archived. For example:
-
-```sh
-./scripts/release.sh "/path/to/NoLogo.app" --target FULL_COMMIT_SHA --first-release
-```
-
-Use `git rev-parse HEAD` to obtain the SHA only if HEAD is the source you archived.
-Existing tags pointing elsewhere are rejected. The command does not build, notarize,
-or commit source. Existing releases are not overwritten.
+The script fetches `origin/main` and stops unless the current branch is a clean `main`
+checkout at that exact commit. It creates the version tag from the merged `main` commit,
+or verifies that an existing tag already points there. This prevents a stable update from
+being published before its release pull request is merged. The command does not build,
+notarize, commit, push branches, or merge pull requests. Existing releases are not overwritten.
 Wait for feed deployment to finish before publishing another release.
 
 ## Verification and recovery
