@@ -75,11 +75,11 @@ final class LogoLightModel {
             throw LogoLightController.ControlError.failed(DeviceCompatibility.unsupportedMessage)
         }
         guard !isBusy else {
-            throw LogoLightController.ControlError.failed("Logo Light is busy. Try again in a moment.")
+            throw LogoLightController.ControlError.failed("NoLogo is busy. Try again in a moment.")
         }
         helperInstalled = LogoLightController.isInstalled
         guard helperInstalled else {
-            throw LogoLightController.ControlError.failed("Open Logo Light and complete setup before toggling the light.")
+            throw LogoLightController.ControlError.failed("Open NoLogo and complete setup before toggling the light.")
         }
         isBusy = true
         defer { isBusy = false }

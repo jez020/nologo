@@ -17,7 +17,7 @@ struct ContentView: View {
                 .foregroundStyle(model.isEnabled == true ? Color.accentColor : Color.secondary)
                 .accessibilityHidden(true)
 
-            Text("Logo Light")
+            Text("NoLogo")
                 .font(.title2.bold())
 
             Button {
@@ -68,7 +68,7 @@ struct ContentView: View {
                 Task { await model.refresh() }
             }
         }
-        .alert("Logo Light", isPresented: $showsError) {
+        .alert("NoLogo", isPresented: $showsError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)

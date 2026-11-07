@@ -1,5 +1,74 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
+import Observation
+
+@MainActor
+@Observable
+private final class LoginSettings {
+    private(set) var status = SMAppService.mainApp.status
+    private(set) var isUpdating = false
+    var errorMessage: String?
+    var showsError = false
+
+    var opensAtLogin: Bool {
+        get { status == .enabled || status == .requiresApproval }
+        set {
+            guard !isUpdating, newValue != opensAtLogin else { return }
+            isUpdating = true
+            Task {
+                defer {
+                    refresh()
+                    isUpdating = false
+                }
+                do {
+                    if newValue {
+                        try SMAppService.mainApp.register()
+                    } else {
+                        try await SMAppService.mainApp.unregister()
+                    }
+                } catch {
+                    errorMessage = error.localizedDescription
+                    showsError = true
+                }
+            }
+        }
+    }
+
+    func refresh() {
+        // macOS owns this preference; it can change outside the app.
+        status = SMAppService.mainApp.status
+    }
+}
+
+private struct LoginSettingsSection: View {
+    @State private var loginSettings = LoginSettings()
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Section("Startup") {
+            Toggle("Open at Login", isOn: $loginSettings.opensAtLogin)
+                .disabled(loginSettings.isUpdating)
+
+            if loginSettings.status == .requiresApproval {
+                Text("Allow NoLogo in System Settings to open automatically when you log in.")
+                    .foregroundStyle(.secondary)
+                Button("Open Login Items Settings…") {
+                    SMAppService.openSystemSettingsLoginItems()
+                }
+            }
+        }
+        .onAppear { loginSettings.refresh() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { loginSettings.refresh() }
+        }
+        .alert("Couldn’t Change Open at Login", isPresented: $loginSettings.showsError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(loginSettings.errorMessage ?? "Please try again.")
+        }
+    }
+}
 
 struct SettingsView: View {
     var model: LogoLightModel = .shared
@@ -21,9 +90,11 @@ struct SettingsView: View {
                 }
             }
 
+            LoginSettingsSection()
+
             Section("App appearance") {
                 Toggle("Show in Dock", isOn: $showDockIcon)
-                Text("When hidden, use the menu bar lightbulb to open Logo Light, access Settings, or quit.")
+                Text("When hidden, use the menu bar lightbulb to open NoLogo, access Settings, or quit.")
                     .foregroundStyle(.secondary)
             }
 
@@ -43,7 +114,7 @@ struct SettingsView: View {
             }
 
             Section("Keyboard shortcut") {
-                LabeledContent("Toggle Logo Light", value: shortcuts.binding.label)
+                LabeledContent("Toggle Logo Illumination", value: shortcuts.binding.label)
                 HStack {
                     Button(shortcuts.isRecording ? "Cancel" : "Record Shortcut…") {
                         if shortcuts.isRecording {
@@ -57,7 +128,7 @@ struct SettingsView: View {
                 }
                 Text(shortcuts.isRecording || !shortcuts.message.isEmpty
                      ? shortcuts.message
-                     : "Works in any app while Logo Light is running, even with its Dock icon hidden. Complete helper setup first.")
+                     : "Works in any app while NoLogo is running, even with its Dock icon hidden. Complete helper setup first.")
                     .foregroundStyle(.secondary)
             }
         }

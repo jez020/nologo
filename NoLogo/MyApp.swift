@@ -19,7 +19,7 @@ struct MyApp: App {
     @State private var shortcuts = ShortcutSettings.shared
 
     var body: some Scene {
-        WindowGroup("Logo Light", id: "main") {
+        WindowGroup("NoLogo", id: "main") {
             ContentView(model: model)
         }
 
@@ -30,7 +30,7 @@ struct MyApp: App {
                     .disabled(!updates.canCheckForUpdates)
             }
             CommandMenu("Light") {
-                Button("Toggle Logo Light") {
+                Button("Toggle Logo Illumination") {
                     Task {
                         do { _ = try await model.toggle() }
                         catch { NSApplication.shared.presentError(error) }
@@ -44,7 +44,7 @@ struct MyApp: App {
             SettingsView(model: model)
         }
 
-        MenuBarExtra("Logo Light", systemImage: model.isEnabled == true ? "lightbulb.fill" : "lightbulb") {
+        MenuBarExtra("NoLogo", systemImage: model.isEnabled == true ? "lightbulb.fill" : "lightbulb") {
             MenuBarContentView(model: model)
         }
         .menuBarExtraStyle(.window)

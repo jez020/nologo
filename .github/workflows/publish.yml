@@ -1,7 +1,14 @@
-name: Publish Sparkle feed
+name: Publish NoLogo updates
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to deploy (for example v1.0.1)
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -14,16 +21,37 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || (!github.event.release.prerelease && !github.event.release.draft)
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Download release feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REQUESTED_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_tag=$(gh release view --json tagName --jq .tagName)
+          if [[ "$REQUESTED_TAG" != "$latest_tag" ]]; then
+            echo "Refusing to deploy an older release: $REQUESTED_TAG" >&2
+            exit 1
+          fi
+          mkdir -p site
+          gh release download "$REQUESTED_TAG" --pattern appcast.xml --dir site
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse('site/appcast.xml').getroot()
+          assert root.tag == 'rss' and root.find('channel/item/enclosure') is not None
+          PY
+          touch site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
-      - name: Deploy feed
+          path: site
+      - name: Deploy update feed
         id: deployment
         uses: actions/deploy-pages@v4

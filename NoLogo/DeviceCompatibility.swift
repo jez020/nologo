@@ -29,5 +29,5 @@ enum DeviceCompatibility {
         supportsLogoLight(modelIdentifier: modelIdentifier)
     }
 
-    static let unsupportedMessage = "Logo Light requires a supported MacBook Pro with a PROLED XDR display."
+    static let unsupportedMessage = "NoLogo requires a supported MacBook Pro with a PROLED XDR display."
 }
