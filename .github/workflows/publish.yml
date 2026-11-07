@@ -43,6 +43,7 @@ jobs:
             exit 1
           fi
           cp -R docs/. site
+          rm -f site/appcast.xml
           gh release download "$REQUESTED_TAG" --pattern appcast.xml --dir site
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
