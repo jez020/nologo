@@ -1,3 +1,4 @@
 ## What's new
 
-- New Logo!
+- New Website
+- New Siri support
