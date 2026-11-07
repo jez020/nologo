@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import AppIntents
 
 @main
 enum AppEntry {
@@ -17,6 +18,10 @@ struct MyApp: App {
     @State private var model = LogoLightModel.shared
     @State private var updates = UpdateManager.shared
     @State private var shortcuts = ShortcutSettings.shared
+
+    init() {
+        NoLogoShortcuts.updateAppShortcutParameters()
+    }
 
     var body: some Scene {
         WindowGroup("NoLogo", id: "main") {

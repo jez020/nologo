@@ -27,6 +27,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Check out website
+        uses: actions/checkout@v4
       - name: Download release feed
         env:
           GH_TOKEN: ${{ github.token }}
@@ -40,7 +42,7 @@ jobs:
             echo "Refusing to deploy an older release: $REQUESTED_TAG" >&2
             exit 1
           fi
-          mkdir -p site
+          cp -R docs/. site
           gh release download "$REQUESTED_TAG" --pattern appcast.xml --dir site
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
