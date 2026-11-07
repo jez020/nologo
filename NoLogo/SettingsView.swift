@@ -83,6 +83,7 @@ struct SettingsView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var confirmsRemoval = false
     @State private var confirmsReset = false
+    @State private var isResetting = false
     @State private var showsError = false
     @State private var errorMessage = ""
 
@@ -146,6 +147,7 @@ struct SettingsView: View {
                     Label("Reset App…", systemImage: "arrow.counterclockwise")
                         .frame(maxWidth: .infinity, minHeight: 28)
                 }
+                .disabled(isResetting || model.isBusy)
             }
 
             Section("Info") {
@@ -168,16 +170,11 @@ struct SettingsView: View {
             if phase != .active { shortcuts.stopRecording() }
         }
         .confirmationDialog("Reset NoLogo?", isPresented: $confirmsReset) {
-            Button("Reset App", role: .destructive) {
-                showDockIcon = true
-                shortcuts.restoreDefault()
-                hasCompletedOnboarding = false
-                openWindow(id: "main")
-                NSApplication.shared.keyWindow?.close()
-                NSApplication.shared.activate()
+            Button("Uninstall Helper and Reset", role: .destructive) {
+                resetApp()
             }
         } message: {
-            Text("This restores NoLogo’s app preferences and starts onboarding again. The helper stays installed and the logo’s current state is unchanged.")
+            Text("This uninstalls the helper, restores NoLogo’s app preferences, closes its open windows, and starts onboarding again. The logo’s current state is unchanged.")
         }
         .confirmationDialog("Remove the logo-control helper?", isPresented: $confirmsRemoval) {
             Button("Remove Helper", role: .destructive) {
@@ -192,10 +189,51 @@ struct SettingsView: View {
         } message: {
             Text("macOS will ask for administrator approval. The logo’s current setting stays unchanged.")
         }
-        .alert("Couldn’t Remove Helper", isPresented: $showsError) {
+        .alert("Couldn’t Complete Action", isPresented: $showsError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
         }
+    }
+
+    private func resetApp() {
+        guard !isResetting else { return }
+        isResetting = true
+
+        Task { @MainActor in
+            defer { isResetting = false }
+
+            do {
+                if model.helperInstalled {
+                    try await model.removeHelper()
+                }
+
+                showDockIcon = true
+                shortcuts.restoreDefault()
+                hasCompletedOnboarding = false
+                openWindow(id: "main")
+                NSApplication.shared.activate()
+
+                await Task.yield()
+                closeAllWindowsExceptOnboarding()
+            } catch {
+                errorMessage = error.localizedDescription
+                showsError = true
+            }
+        }
+    }
+
+    private func closeAllWindowsExceptOnboarding() {
+        guard let onboardingWindow = NSApplication.shared.windows.first(where: {
+            $0.title == "NoLogo"
+        }) else {
+            return
+        }
+
+        for window in NSApplication.shared.windows where window !== onboardingWindow {
+            window.close()
+        }
+
+        onboardingWindow.makeKeyAndOrderFront(nil)
     }
 }
