@@ -34,8 +34,16 @@ and signs the update. It uploads the ZIP and appcast to a draft release, then pu
 it. The **Publish NoLogo updates** workflow deploys the release’s appcast to GitHub Pages.
 There is no manual XML editing, asset uploading, or feed commit.
 
-The command requires the matching source tag to exist on GitHub. It does not build,
-notarize, commit source, or create tags. Existing releases are not overwritten.
+The matching source tag must exist on GitHub, or pass `--target FULL_COMMIT_SHA`
+to create it during publication from the pushed commit you archived. For example:
+
+```sh
+./scripts/release.sh "/path/to/NoLogo.app" --target FULL_COMMIT_SHA --first-release
+```
+
+Use `git rev-parse HEAD` to obtain the SHA only if HEAD is the source you archived.
+Existing tags pointing elsewhere are rejected. The command does not build, notarize,
+or commit source. Existing releases are not overwritten.
 Wait for feed deployment to finish before publishing another release.
 
 ## Verification and recovery

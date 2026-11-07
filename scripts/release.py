@@ -29,6 +29,30 @@ def version_tuple(value):
     return parts + (0,) * (3 - len(parts))
 
 
+def release_tag_options(tag, target):
+    if target and not re.fullmatch(r'[0-9a-fA-F]{40}', target):
+        raise ValueError('--target must be the full 40-character SHA of the pushed commit you archived.')
+    if target:
+        run('gh', 'api', f'repos/{REPO}/commits/{target}', capture=True)
+    try:
+        run('gh', 'api', f'repos/{REPO}/git/ref/tags/{tag}', capture=True)
+    except subprocess.CalledProcessError:
+        # Check access separately: GitHub also returns 404 for inaccessible repositories.
+        run('gh', 'api', f'repos/{REPO}', capture=True)
+        if target:
+            return ['--target', target]
+        raise ValueError(
+            f'Could not verify tag {tag} on GitHub. Push that tag, or rerun with '
+            '--target FULL_COMMIT_SHA to create it from the pushed source commit you archived.'
+        ) from None
+    if target:
+        tagged_commit = run('gh', 'api', f'repos/{REPO}/commits/{tag}',
+                            '--jq', '.sha', capture=True).strip()
+        if tagged_commit.lower() != target.lower():
+            raise ValueError(f'Existing tag {tag} points to a different commit; it will not be moved.')
+    return ['--verify-tag']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('app', type=Path, help='Exported, notarized NoLogo.app')
@@ -37,6 +61,7 @@ def main():
     parser.add_argument('--sparkle-bin', type=Path, help='Sparkle bin directory; normally auto-discovered')
     parser.add_argument('--account', default='ed25519', help='Sparkle Keychain account')
     parser.add_argument('--notes', type=Path, help='Release notes file; otherwise GitHub generates notes')
+    parser.add_argument('--target', help='Full pushed source commit SHA; creates the version tag if missing')
     args = parser.parse_args()
     app = args.app.resolve()
     with (app / 'Contents/Info.plist').open('rb') as file:
@@ -66,8 +91,7 @@ def main():
     run('spctl', '--assess', '--type', 'execute', app)
     run('xcrun', 'stapler', 'validate', app)
     run('gh', 'auth', 'status')
-    # Require a pushed source tag instead of silently tagging an unrelated branch tip.
-    run('gh', 'api', f'repos/{REPO}/git/ref/tags/{tag}', capture=True)
+    tag_options = release_tag_options(tag, args.target)
     try:
         with urllib.request.urlopen(config['SUFeedURL'], timeout=30) as response:
             previous_feed = response.read()
@@ -106,7 +130,7 @@ def main():
     notes = ['--notes-file', args.notes.resolve()] if args.notes else ['--generate-notes']
     # Upload privately first; publish only after both assets are uploaded.
     run('gh', 'release', 'create', tag, archive, feed, '--repo', REPO,
-        '--verify-tag', '--draft', '--title', f'NoLogo {version}', *notes)
+        *tag_options, '--draft', '--title', f'NoLogo {version}', *notes)
     run('gh', 'release', 'edit', tag, '--repo', REPO, '--draft=false', '--latest')
     print(f'Published NoLogo {version}. Check Actions → Publish NoLogo updates for deployment.')
 

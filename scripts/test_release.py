@@ -80,6 +80,22 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.version_tuple('1.0-beta')
 
+    def test_missing_tag_explains_recovery(self):
+        def command(*args, **kwargs):
+            if '/git/ref/tags/' in str(args[2]):
+                raise release.subprocess.CalledProcessError(1, args)
+            return ''
+        with patch.object(release, 'run', side_effect=command):
+            with self.assertRaisesRegex(ValueError, '--target FULL_COMMIT_SHA'):
+                release.release_tag_options('v1.0', None)
+            sha = 'a' * 40
+            self.assertEqual(release.release_tag_options('v1.0', sha), ['--target', sha])
+
+    def test_existing_tag_cannot_be_moved(self):
+        with patch.object(release, 'run', return_value='b' * 40):
+            with self.assertRaisesRegex(ValueError, 'different commit'):
+                release.release_tag_options('v1.0', 'a' * 40)
+
 
 if __name__ == '__main__':
     unittest.main()
