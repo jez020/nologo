@@ -1,3 +1,4 @@
 ## What's new
 
-- New release logic!
+- Updated readme
+- Squashed some bugs
