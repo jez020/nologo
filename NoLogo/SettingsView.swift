@@ -84,6 +84,7 @@ struct SettingsView: View {
     @State private var confirmsRemoval = false
     @State private var confirmsReset = false
     @State private var isResetting = false
+    @State private var isGeneratingDebugLog = false
     @State private var showsError = false
     @State private var errorMessage = ""
 
@@ -142,6 +143,17 @@ struct SettingsView: View {
 
             Section("Help") {
                 Button {
+                    generateDebugLog()
+                } label: {
+                    Label("Generate Debug Log…", systemImage: "doc.badge.gearshape")
+                        .frame(maxWidth: .infinity, minHeight: 28)
+                }
+                .disabled(isGeneratingDebugLog || model.isBusy)
+
+                Text("Saves a JSON snapshot with technical diagnostics only. It does not include personal information, file paths, serial numbers, network data, or your shortcut keys.")
+                    .foregroundStyle(.secondary)
+
+                Button {
                     confirmsReset = true
                 } label: {
                     Label("Reset App…", systemImage: "arrow.counterclockwise")
@@ -193,6 +205,28 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+    }
+
+    private func generateDebugLog() {
+        guard !isGeneratingDebugLog else { return }
+        isGeneratingDebugLog = true
+
+        Task { @MainActor in
+            defer { isGeneratingDebugLog = false }
+            await model.refresh()
+
+            do {
+                _ = try DebugLogGenerator.save(
+                    model: model,
+                    showsDockIcon: showDockIcon,
+                    completedOnboarding: hasCompletedOnboarding,
+                    usesDefaultShortcut: shortcuts.binding == .standard
+                )
+            } catch {
+                errorMessage = error.localizedDescription
+                showsError = true
+            }
         }
     }
 

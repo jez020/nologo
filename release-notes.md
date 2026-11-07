@@ -1,3 +1,5 @@
 ## What's new
 
-- New release logic!
+- Updated readme
+- Squashed some bugs
+- Added a debug log generation tool for debugging

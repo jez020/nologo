@@ -20,11 +20,13 @@ final class UpdateManager {
     #endif
 
     func start() {
+        DebugEventLogger.record(category: "updates", action: "start", outcome: "started")
         #if canImport(Sparkle)
         guard controller == nil else { return }
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
               Data(base64Encoded: key)?.count == 32 else {
             configurationMessage = "Updates are not configured for this build."
+            DebugEventLogger.record(category: "updates", action: "start", outcome: "not_configured")
             return
         }
 
@@ -39,13 +41,16 @@ final class UpdateManager {
             }
         }
         controller.startUpdater()
+        DebugEventLogger.record(category: "updates", action: "start", outcome: "succeeded")
         #else
         configurationMessage = "Updates require the Sparkle package in this development build."
+        DebugEventLogger.record(category: "updates", action: "start", outcome: "dependency_unavailable")
         #endif
     }
 
     func checkForUpdates() {
         guard canCheckForUpdates else { return }
+        DebugEventLogger.record(category: "updates", action: "check", outcome: "requested")
         NSApplication.shared.activate()
         #if canImport(Sparkle)
         controller?.checkForUpdates(nil)

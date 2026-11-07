@@ -21,25 +21,35 @@ final class LogoLightModel {
 
     func refresh() async {
         guard !isBusy else { return }
+        DebugEventLogger.record(category: "logo_control", action: "refresh", outcome: "started")
         isBusy = true
         defer { isBusy = false }
         helperInstalled = LogoLightController.isInstalled
         guard supported else {
             isEnabled = nil
             status = DeviceCompatibility.unsupportedMessage
+            DebugEventLogger.record(category: "logo_control", action: "refresh", outcome: "unsupported")
             return
         }
         guard helperInstalled else {
             isEnabled = nil
             status = "Approve setup once to control the logo light."
+            DebugEventLogger.record(category: "logo_control", action: "refresh", outcome: "helper_missing")
             return
         }
         do {
             try await LogoLightController.checkConnection()
             updateState(try await LogoLightController.readEnabled())
+            DebugEventLogger.record(category: "logo_control", action: "refresh", outcome: "succeeded")
         } catch {
             isEnabled = nil
             status = "Couldn’t connect. Open Settings to remove the old helper, then set up again."
+            DebugEventLogger.record(
+                category: "logo_control",
+                action: "refresh",
+                outcome: "failed",
+                detail: DebugEventLogger.sanitizedErrorCategory(for: error)
+            )
         }
     }
 
@@ -60,10 +70,18 @@ final class LogoLightModel {
             }
             do {
                 status = "Waiting for setup approval…"
+                DebugEventLogger.record(category: "helper", action: "install", outcome: "started")
                 try await LogoLightController.install()
                 updateState(try await LogoLightController.readEnabled())
+                DebugEventLogger.record(category: "helper", action: "install", outcome: "succeeded")
             } catch {
                 status = "Setup did not complete."
+                DebugEventLogger.record(
+                    category: "helper",
+                    action: "install",
+                    outcome: "failed",
+                    detail: DebugEventLogger.sanitizedErrorCategory(for: error)
+                )
                 throw error
             }
         }
@@ -90,6 +108,8 @@ final class LogoLightModel {
             throw LogoLightController.ControlError.failed("Open NoLogo and complete setup before controlling the light.")
         }
         isBusy = true
+        let action = requested == nil ? "toggle" : "set"
+        DebugEventLogger.record(category: "logo_control", action: action, outcome: "started")
         defer { isBusy = false }
         do {
             status = "Changing logo illumination…"
@@ -100,22 +120,46 @@ final class LogoLightModel {
                 enabled = try await LogoLightController.toggle()
             }
             updateState(enabled)
+            DebugEventLogger.record(
+                category: "logo_control",
+                action: action,
+                outcome: "succeeded",
+                detail: enabled ? "on" : "off"
+            )
             return enabled
         } catch {
             isEnabled = nil
             status = "Couldn’t confirm the light’s setting. Retry the connection."
+            DebugEventLogger.record(
+                category: "logo_control",
+                action: action,
+                outcome: "failed",
+                detail: DebugEventLogger.sanitizedErrorCategory(for: error)
+            )
             throw error
         }
     }
 
     func removeHelper() async throws {
         guard !isBusy else { return }
+        DebugEventLogger.record(category: "helper", action: "remove", outcome: "started")
         isBusy = true
         defer {
             helperInstalled = LogoLightController.isInstalled
             isBusy = false
         }
-        try await LogoLightController.uninstall()
+        do {
+            try await LogoLightController.uninstall()
+            DebugEventLogger.record(category: "helper", action: "remove", outcome: "succeeded")
+        } catch {
+            DebugEventLogger.record(
+                category: "helper",
+                action: "remove",
+                outcome: "failed",
+                detail: DebugEventLogger.sanitizedErrorCategory(for: error)
+            )
+            throw error
+        }
         isEnabled = nil
         status = supported ? "Approve setup once to control the logo light."
             : DeviceCompatibility.unsupportedMessage
