@@ -62,6 +62,17 @@ The helper performs the privileged setting change so ordinary toggles do not req
 
 Closing the main window keeps NoLogo running in the menu bar. The global shortcut requires completed helper setup and an available key combination.
 
+### Apple Shortcuts
+
+1. Open the updated NoLogo app and complete helper setup.
+2. Open Apple’s **Shortcuts** app and create a shortcut.
+3. Search the available actions for **NoLogo**.
+4. Add **Turn Logo Light On** or **Turn Logo Light Off**, then run the shortcut.
+
+Each action sets a specific state: running On twice leaves the light on. Actions support background execution and report setup or connection errors in Shortcuts.
+
+If you installed the helper before Shortcuts support was added, choose **Settings → Logo-control helper → Remove Helper…**, then **Set Up Logo Control** once to install the updated helper. Administrator approval is only needed for that setup.
+
 ### Customize Settings
 
 - **Startup → Open at Login:** start NoLogo when you sign in. If approval is required, use **Open Login Items Settings…** and allow NoLogo in System Settings.

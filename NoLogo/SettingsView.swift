@@ -48,7 +48,7 @@ private struct LoginSettingsSection: View {
     var body: some View {
         Section("Startup") {
             Toggle(isOn: $loginSettings.opensAtLogin) {
-                Text("Open at Login").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                Text("Open at Login").frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
             }
                 .disabled(loginSettings.isUpdating)
 
@@ -58,7 +58,7 @@ private struct LoginSettingsSection: View {
                 Button {
                     SMAppService.openSystemSettingsLoginItems()
                 } label: {
-                    Text("Open Login Items Settings…").frame(maxWidth: .infinity, minHeight: 44)
+                    Text("Open Login Items Settings…").frame(maxWidth: .infinity, minHeight: 28)
                 }
             }
         }
@@ -89,7 +89,7 @@ struct SettingsView: View {
 
             Section("App appearance") {
                 Toggle(isOn: $showDockIcon) {
-                    Text("Show in Dock").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    Text("Show in Dock").frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
                 }
                 Text("When hidden, use the menu bar lightbulb to open NoLogo, access Settings, or quit.")
                     .foregroundStyle(.secondary)
@@ -103,7 +103,7 @@ struct SettingsView: View {
                 Button(role: .destructive) {
                     confirmsRemoval = true
                 } label: {
-                    Text("Remove Helper…").frame(maxWidth: .infinity, minHeight: 44)
+                    Text("Remove Helper…").frame(maxWidth: .infinity, minHeight: 28)
                 }
                 .disabled(!model.helperInstalled || model.isBusy)
 
@@ -114,7 +114,7 @@ struct SettingsView: View {
 
             Section("Keyboard shortcut") {
                 LabeledContent("Toggle Logo Illumination", value: shortcuts.binding.label)
-                VStack(spacing: 12) {
+                HStack(spacing: 12) {
                     Button {
                         if shortcuts.isRecording {
                             shortcuts.stopRecording()
@@ -123,10 +123,10 @@ struct SettingsView: View {
                         }
                     } label: {
                         Text(shortcuts.isRecording ? "Cancel" : "Record Shortcut…")
-                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .frame(maxWidth: .infinity, minHeight: 28)
                     }
                     Button { shortcuts.restoreDefault() } label: {
-                        Text("Restore Default").frame(maxWidth: .infinity, minHeight: 44)
+                        Text("Restore Default").frame(maxWidth: .infinity, minHeight: 28)
                     }
                         .disabled(shortcuts.binding == .standard && !shortcuts.isRecording)
                 }
@@ -143,10 +143,10 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .controlSize(.extraLarge)
+        .controlSize(.large)
         .toggleStyle(.switch)
-        .buttonStyle(.bordered)
-        .frame(minWidth: 460, idealWidth: 500, minHeight: 480, idealHeight: 680)
+        .buttonStyle(.glass)
+        .frame(width: 480, height: 620)
         .task { await model.refresh() }
         .onChange(of: showDockIcon) { _, show in
             NSApplication.shared.setActivationPolicy(show ? .regular : .accessory)

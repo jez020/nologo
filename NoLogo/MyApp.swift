@@ -67,6 +67,7 @@ struct MyApp: App {
         Settings {
             SettingsView(model: model)
         }
+        .windowResizability(.contentSize)
 
         MenuBarExtra("NoLogo", systemImage: model.isEnabled == true ? "lightbulb.fill" : "lightbulb") {
             MenuBarContentView(model: model)

@@ -9,8 +9,15 @@ struct ContentView: View {
     @State private var errorMessage = ""
     @State private var showsError = false
 
+    private var primaryButtonColor: Color {
+        guard model.supported, model.helperInstalled, let isEnabled = model.isEnabled else {
+            return .accentColor
+        }
+        return isEnabled ? .orange : .green
+    }
+
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             Spacer(minLength: 0)
             Image(systemName: model.isEnabled == true ? "lightbulb.fill" : "lightbulb")
                 .font(.largeTitle)
@@ -30,9 +37,10 @@ struct ContentView: View {
                 }
             } label: {
                 Text(model.buttonTitle)
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 28)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
+            .tint(primaryButtonColor)
             .controlSize(.large)
             .disabled(model.isBusy || !model.supported)
 
@@ -58,12 +66,13 @@ struct ContentView: View {
                 }
             } label: {
                 Label("Settings", systemImage: "gearshape")
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 28)
             }
         }
         .padding(28)
-        .frame(width: 340, height: isMenuBar ? 400 : 480)
-        .controlSize(.extraLarge)
+        .frame(width: 340, height: isMenuBar ? 340 : 400)
+        .controlSize(.large)
+        .buttonStyle(.glass)
         .task { await model.refresh() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

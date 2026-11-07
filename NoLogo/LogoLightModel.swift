@@ -69,8 +69,16 @@ final class LogoLightModel {
         }
     }
 
-    // Shared by the button and keyboard command. Never request setup from a toggle.
+    // All entry points share busy handling and update the visible state.
     func toggle() async throws -> Bool {
+        try await changeSetting(to: nil)
+    }
+
+    func setEnabled(_ enabled: Bool) async throws {
+        _ = try await changeSetting(to: enabled)
+    }
+
+    private func changeSetting(to requested: Bool?) async throws -> Bool {
         guard supported else {
             throw LogoLightController.ControlError.failed(DeviceCompatibility.unsupportedMessage)
         }
@@ -79,13 +87,18 @@ final class LogoLightModel {
         }
         helperInstalled = LogoLightController.isInstalled
         guard helperInstalled else {
-            throw LogoLightController.ControlError.failed("Open NoLogo and complete setup before toggling the light.")
+            throw LogoLightController.ControlError.failed("Open NoLogo and complete setup before controlling the light.")
         }
         isBusy = true
         defer { isBusy = false }
         do {
             status = "Changing logo illumination…"
-            let enabled = try await LogoLightController.toggle()
+            let enabled: Bool
+            if let requested {
+                enabled = try await LogoLightController.setEnabled(requested)
+            } else {
+                enabled = try await LogoLightController.toggle()
+            }
             updateState(enabled)
             return enabled
         } catch {

@@ -33,7 +33,12 @@ enum LogoLightController {
         return try await request(operation: .toggle)
     }
 
-    private enum Operation { case check, read, toggle }
+    static func setEnabled(_ enabled: Bool) async throws -> Bool {
+        try await checkConnection()
+        return try await request(operation: .set(enabled))
+    }
+
+    private enum Operation { case check, read, toggle, set(Bool) }
 
     private static func request(operation: Operation) async throws -> Bool {
         guard DeviceCompatibility.isSupported else {
@@ -74,16 +79,17 @@ enum LogoLightController {
                 } catch { }
             }
             switch operation {
-            case .read, .toggle:
+            case .read, .toggle, .set:
                 let reply: (Bool, String?) -> Void = { enabled, message in
                     Task { @MainActor in
                         pending.finish(message.map { .failure(ControlError.failed($0)) } ?? .success(enabled))
                     }
                 }
-                if operation == .read {
-                    proxy.readEnabled(reply: reply)
-                } else {
-                    proxy.toggle(reply: reply)
+                switch operation {
+                case .read: proxy.readEnabled(reply: reply)
+                case .toggle: proxy.toggle(reply: reply)
+                case .set(let enabled): proxy.setEnabled(enabled, reply: reply)
+                case .check: break
                 }
             case .check:
                 proxy.ping { version in
