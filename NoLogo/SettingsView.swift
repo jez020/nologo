@@ -82,6 +82,12 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("Info") {
+                LabeledContent("App", value: "NoLogo")
+                LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")
+                LabeledContent("Build", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")
+            }
+
             Section("Updates") {
                 Button("Check for Updates…") { updates.checkForUpdates() }
                     .disabled(!updates.canCheckForUpdates)
