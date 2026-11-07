@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>NoLogo Updates</title>
+    <link>https://github.com/jez020/NoLogo</link>
+    <description>Signed NoLogo releases.</description>
+    <language>en</language>
+    <!-- Populate with Sparkle's generate_appcast after publishing a signed release. -->
+  </channel>
+</rss>
