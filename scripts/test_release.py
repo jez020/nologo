@@ -31,6 +31,14 @@ class ReleaseTests(unittest.TestCase):
     def command(self, *args, **kwargs):
         args = tuple(map(str, args))
         self.calls.append(args)
+        if args[:3] == ('git', 'branch', '--show-current'):
+            return 'main\n'
+        if args[:3] == ('git', 'status', '--porcelain'):
+            return ''
+        if args[:2] == ('git', 'rev-parse'):
+            return 'a' * 40 + '\n'
+        if args[:2] == ('gh', 'api') and '/commits/v1.1' in args[2]:
+            return 'a' * 40 + '\n'
         if args[0].endswith('generate_keys'):
             return self.config['SUPublicEDKey']
         if args[:2] == ('gh', 'api') and args[2].endswith('/generate-notes'):
@@ -100,21 +108,57 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.version_tuple('1.0-beta')
 
-    def test_missing_tag_explains_recovery(self):
+    def test_missing_tag_is_created_from_main(self):
         def command(*args, **kwargs):
+            if args[:3] == ('git', 'branch', '--show-current'):
+                return 'main\n'
+            if args[:3] == ('git', 'status', '--porcelain'):
+                return ''
+            if args[:2] == ('git', 'rev-parse'):
+                return 'a' * 40 + '\n'
             if '/git/ref/tags/' in str(args[2]):
                 raise release.subprocess.CalledProcessError(1, args)
             return ''
         with patch.object(release, 'run', side_effect=command):
-            with self.assertRaisesRegex(ValueError, '--target FULL_COMMIT_SHA'):
-                release.release_tag_options('v1.0', None)
-            sha = 'a' * 40
-            self.assertEqual(release.release_tag_options('v1.0', sha), ['--target', sha])
+            self.assertEqual(
+                release.stable_release_target('v1.0'),
+                ('a' * 40, ['--target', 'a' * 40])
+            )
 
     def test_existing_tag_cannot_be_moved(self):
-        with patch.object(release, 'run', return_value='b' * 40):
-            with self.assertRaisesRegex(ValueError, 'different commit'):
-                release.release_tag_options('v1.0', 'a' * 40)
+        def command(*args, **kwargs):
+            if args[:3] == ('git', 'branch', '--show-current'):
+                return 'main\n'
+            if args[:3] == ('git', 'status', '--porcelain'):
+                return ''
+            if args[:2] == ('git', 'rev-parse'):
+                return 'a' * 40 + '\n'
+            if '/commits/v1.0' in str(args):
+                return 'b' * 40
+            return ''
+        with patch.object(release, 'run', side_effect=command):
+            with self.assertRaisesRegex(ValueError, 'origin/main'):
+                release.stable_release_target('v1.0')
+
+    def test_release_branch_cannot_publish_stable_update(self):
+        with patch.object(release, 'run', return_value='release-v1.1\n'):
+            with self.assertRaisesRegex(ValueError, 'must be generated from main'):
+                release.stable_release_target('v1.1')
+
+    def test_local_main_must_match_origin(self):
+        def command(*args, **kwargs):
+            if args[:3] == ('git', 'branch', '--show-current'):
+                return 'main\n'
+            if args[:3] == ('git', 'status', '--porcelain'):
+                return ''
+            if args[:3] == ('git', 'rev-parse', 'HEAD'):
+                return 'a' * 40 + '\n'
+            if args[:3] == ('git', 'rev-parse', 'origin/main'):
+                return 'b' * 40 + '\n'
+            return ''
+        with patch.object(release, 'run', side_effect=command):
+            with self.assertRaisesRegex(ValueError, 'exactly match origin/main'):
+                release.stable_release_target('v1.1')
 
 
 if __name__ == '__main__':

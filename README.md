@@ -1,121 +1,85 @@
 # NoLogo
 
-Control your MacBook’s logo illumination from a simple macOS app, the menu bar, or a keyboard shortcut.
+NoLogo is a small macOS app for turning your MacBook Pro’s logo light on or off.
 
-[Download the latest release](https://github.com/jez020/nologo/releases/latest) · [Release history](https://github.com/jez020/nologo/releases) · [Report an issue](https://github.com/jez020/nologo/issues)
+[Download NoLogo](https://github.com/jez020/nologo/releases/latest) · [View releases](https://github.com/jez020/nologo/releases) · [Report an issue](https://github.com/jez020/nologo/issues)
+
+## Features
+
+- Turn the logo light on or off from the app or menu bar
+- Use a global keyboard shortcut from any app
+- Create automations with Apple Shortcuts or Siri
+- Open NoLogo automatically when you log in
+- Hide the Dock icon for a menu-bar-only experience
+- Check for updates inside the app
 
 ## Requirements
 
-- **macOS 27.2 or later** for the current project configuration. Check the release notes for the requirements of the version you download.
-- **A supported Mac with controllable logo illumination.** The current app accepts only the model identifiers listed below; other models show **Unsupported Mac**.
-- **Administrator approval** to install or remove the logo-control helper.
-- An internet connection to download the app and check for updates. NoLogo must remain running for its menu bar controls and global shortcut to work.
+- macOS 27.2 or later for the current release
+- A supported MacBook Pro with a PROLED XDR display
+- Administrator approval during first-time setup
 
-### Supported model identifiers
+Supported model identifiers: `Mac17,10`, `Mac17,11`, `Mac17,12`, and `Mac17,13`.
 
-The app’s current compatibility list is:
-
-| Model identifier | Accepted by NoLogo |
-| --- | --- |
-| `Mac17,10` | Yes |
-| `Mac17,11` | Yes |
-| `Mac17,12` | Yes |
-| `Mac17,13` | Yes |
-
-To check yours, open **System Information → Hardware → Model Identifier**, or run this read-only command in Terminal:
-
-```sh
-sysctl -n hw.model
-```
-
-This list reflects the app’s compatibility check, not a guarantee of support for other Macs with similar names. NoLogo cannot add illumination to hardware that does not have it.
+To find your model identifier, open **System Information → Hardware** and look for **Model Identifier**.
 
 ## Install
 
-1. Open the [latest release](https://github.com/jez020/nologo/releases/latest).
-2. Under **Assets**, download **NoLogo-<version>.zip**. Choose the app archive, not GitHub’s source-code archives or `appcast.xml`.
-3. Double-click the ZIP to extract **NoLogo.app**.
-4. Drag **NoLogo.app** into **Applications**.
-5. Open NoLogo from Applications. If macOS asks whether to open the downloaded app, confirm that you want to open it.
+1. Download the app ZIP from the [latest release](https://github.com/jez020/nologo/releases/latest).
+2. Open the ZIP and move **NoLogo.app** to **Applications**.
+3. Open NoLogo.
+4. Select **Set Up Logo Control** and approve the administrator prompt.
 
-No Terminal commands or Xcode installation are needed to use a released app.
-
-### First-time setup
-
-1. In NoLogo, click **Set Up Logo Control**.
-2. Approve the macOS administrator prompt to install the helper.
-3. Wait for the app to show the current illumination setting.
-4. Click **Turn Light Off** or **Turn Light On**.
-
-The helper performs the privileged setting change so ordinary toggles do not require repeated administrator prompts. Canceling setup leaves logo control unavailable until you complete it.
+Setup installs a small helper so you will not need to enter your password every time you change the light.
 
 ## Use NoLogo
 
-| What you want to do | How |
-| --- | --- |
-| Turn illumination on or off | Use **Turn Light On / Off** in the app or lightbulb popup. |
-| Control it from another app | Press **⌘⇧L** (Command–Shift–L), the default global shortcut. |
-| Access the menu bar controls | Click the **lightbulb** near the right side of the macOS menu bar. |
-| Reopen the main window | Click the lightbulb, then **Open App**. |
-| Open Settings | Click **Settings** in the app or lightbulb popup. |
-| Quit | Use **NoLogo → Quit NoLogo**, or **Quit** in the lightbulb popup. |
+Select **Turn Light On** or **Turn Light Off** in the app. You can also click the lightbulb in the menu bar.
 
-Closing the main window keeps NoLogo running in the menu bar. The global shortcut requires completed helper setup and an available key combination.
+The default global shortcut is **Command–Shift–L**. Change it in **Settings → Keyboard shortcut**.
 
-### Apple Shortcuts
+Closing the main window keeps NoLogo running in the menu bar. The menu bar gives you quick access to the light control, Settings, updates, and Quit.
 
-1. Open the updated NoLogo app and complete helper setup.
-2. Open Apple’s **Shortcuts** app and create a shortcut.
-3. Search the available actions for **NoLogo**.
-4. Add **Turn Logo Light On** or **Turn Logo Light Off**, then run the shortcut.
+### Apple Shortcuts and Siri
 
-Each action sets a specific state: running On twice leaves the light on. Actions support background execution and report setup or connection errors in Shortcuts.
+In the Shortcuts app, search for NoLogo and add either action:
 
-If you installed the helper before Shortcuts support was added, choose **Settings → Logo-control helper → Remove Helper…**, then **Set Up Logo Control** once to install the updated helper. Administrator approval is only needed for that setup.
+- **Turn Logo Light On**
+- **Turn Logo Light Off**
 
-### Customize Settings
+These actions can run in the background after NoLogo’s helper has been set up.
 
-- **Startup → Open at Login:** start NoLogo when you sign in. If approval is required, use **Open Login Items Settings…** and allow NoLogo in System Settings.
-- **App appearance → Show in Dock:** hide or show the Dock icon. With it hidden, use the menu bar lightbulb to access the app.
-- **Keyboard shortcut → Record Shortcut…:** choose a letter or number with Command, Option, or Control. Shift can be added. Press Escape to cancel, or use **Restore Default** to return to ⌘⇧L. Common app shortcuts and combinations already in use may be unavailable.
-- **Info:** find the installed version and build number at the bottom of Settings.
+### Settings
 
-## Updates and changelogs
+- **Open at Login** starts NoLogo when you sign in.
+- **Show in Dock** lets you use NoLogo as a regular app or only from the menu bar.
+- **Record Shortcut** changes the global keyboard shortcut.
+- **Remove Helper** removes the logo-control helper.
 
-With NoLogo active, choose **NoLogo → Check for Updates…** in the app menu at the top of the screen. If the Dock icon is hidden, first use **Open App** from the lightbulb popup to bring the app forward.
+## Updates
 
-Updates are delivered through Sparkle. Newly published releases using the current release script include a changelog in the update window. You can also read the [release history](https://github.com/jez020/nologo/releases).
+Choose **Check for Updates…** from the NoLogo menu or the menu bar popup. Updates are delivered through Sparkle.
 
-If an older version cannot check for updates, download the latest ZIP, quit NoLogo, and replace the app in Applications. Early builds used an incorrectly capitalized update-feed URL and require this manual update.
-
-Some releases may require a helper update. If instructed by the release notes or the app, remove the old helper in Settings, then complete setup again.
+If an older version cannot check for updates, download the latest release and replace the existing app in Applications.
 
 ## Troubleshooting
 
-| Message or problem | What to try |
-| --- | --- |
-| **Unsupported Mac** | Compare your model identifier with the list above. Updating macOS alone does not make unsupported hardware compatible. |
-| **Retry Connection** | Click it to reconnect. If the problem persists, use **Settings → Logo-control helper → Remove Helper…**, then run **Set Up Logo Control** again. |
-| Setup was canceled | Click **Set Up Logo Control** again and approve the administrator prompt. |
-| Shortcut does nothing | Confirm NoLogo is running and helper setup is complete. Record another combination if another app uses the shortcut. |
-| Open at Login needs approval | Follow the button in Settings to macOS Login Items settings and allow NoLogo. |
-| Error retrieving update information | Check your connection and try again. If it persists, install the latest release manually. |
-| No Dock icon | Click the menu bar lightbulb, open Settings, and enable **Show in Dock**. |
+- **Unsupported Mac:** Check that your model identifier is listed above.
+- **Retry Connection:** Retry once. If it still fails, remove the helper in Settings and run setup again.
+- **Shortcut does nothing:** Make sure NoLogo is running and helper setup is complete. Try a different shortcut if another app uses the same one.
+- **No Dock icon:** Use the menu bar lightbulb to open Settings and enable **Show in Dock**.
 
-For unresolved issues, [open a GitHub issue](https://github.com/jez020/nologo/issues) with your macOS version, model identifier, NoLogo version/build, and the exact error message. Do not include passwords or your Mac’s serial number.
+Still stuck? [Open an issue](https://github.com/jez020/nologo/issues) with your macOS version, model identifier, NoLogo version, and the error message. Do not include passwords or your Mac’s serial number.
 
 ## Uninstall
 
-1. If you want illumination on after uninstalling, click **Turn Light On** first.
-2. Turn off **Settings → Startup → Open at Login**.
-3. Select **Settings → Logo-control helper → Remove Helper…** and approve removal.
-4. Quit NoLogo.
-5. Move **NoLogo.app** from Applications to the Trash.
+1. Turn the light on first if you want it left on.
+2. Disable **Open at Login** in Settings.
+3. Select **Remove Helper** in Settings.
+4. Quit NoLogo and move it to the Trash.
 
-Removing the helper leaves the current illumination setting unchanged. Remove it before deleting the app so you can use NoLogo’s built-in removal flow.
+## Build from source
 
-## Building and publishing
+Open `NoLogo.xcodeproj` in Xcode and allow Swift Package Manager to resolve Sparkle. You will need a compatible macOS SDK and your own signing configuration.
 
-Developers can open `NoLogo.xcodeproj` in Xcode and let Swift Package Manager resolve Sparkle. Local builds need a compatible macOS SDK and signing configuration. Released downloads do not require any development tools.
-
-See [the publishing guide](NoLogo/SparkleSetup.md) for Developer ID export, notarization, Sparkle signing, changelogs, and the release script.
+See the [publishing guide](NoLogo/SparkleSetup.md) for release and notarization instructions.
