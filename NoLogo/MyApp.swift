@@ -20,9 +20,9 @@ struct MyApp: App {
 
     var body: some Scene {
         WindowGroup("NoLogo", id: "main") {
-            ContentView(model: model)
+            AppRootView(model: model)
         }
-
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .commands {
             // NoLogo has no documents, editable content, toolbar, or sidebar.
@@ -68,10 +68,5 @@ struct MyApp: App {
             SettingsView(model: model)
         }
         .windowResizability(.contentSize)
-
-        MenuBarExtra("NoLogo", systemImage: model.isEnabled == true ? "lightbulb.fill" : "lightbulb") {
-            MenuBarContentView(model: model)
-        }
-        .menuBarExtraStyle(.window)
     }
 }

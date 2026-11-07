@@ -3,23 +3,34 @@ import AppKit
 
 struct MenuBarContentView: View {
     let model: LogoLightModel
+    let updates: UpdateManager
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(spacing: 0) {
             ContentView(model: model, isMenuBar: true)
             Divider()
-            HStack(spacing: 12) {
+            VStack(spacing: 12) {
                 Button {
-                    openWindow(id: "main")
-                    NSApplication.shared.activate()
+                    updates.checkForUpdates()
                 } label: {
-                    Text("Open App").frame(maxWidth: .infinity, minHeight: 28)
+                    Label("Check for Updates…", systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
+                        .frame(maxWidth: .infinity, minHeight: 28)
                 }
-                Button {
-                    NSApplication.shared.terminate(nil)
-                } label: {
-                    Text("Quit").frame(maxWidth: .infinity, minHeight: 28)
+                .disabled(!updates.canCheckForUpdates)
+
+                HStack(spacing: 12) {
+                    Button {
+                        openWindow(id: "main")
+                        NSApplication.shared.activate()
+                    } label: {
+                        Text("Open App").frame(maxWidth: .infinity, minHeight: 28)
+                    }
+                    Button {
+                        NSApplication.shared.terminate(nil)
+                    } label: {
+                        Text("Quit").frame(maxWidth: .infinity, minHeight: 28)
+                    }
                 }
             }
             .buttonStyle(.glass)

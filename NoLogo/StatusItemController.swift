@@ -9,12 +9,11 @@ final class StatusItemController: NSObject {
     private let shortcuts: ShortcutSettings
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private var mainWindow: NSWindow?
-    private var settingsWindow: NSWindow?
 
     init(
-        model: LogoLightModel = .shared,
-        updates: UpdateManager = .shared,
-        shortcuts: ShortcutSettings = .shared
+        model: LogoLightModel,
+        updates: UpdateManager,
+        shortcuts: ShortcutSettings
     ) {
         self.model = model
         self.updates = updates
@@ -46,7 +45,7 @@ final class StatusItemController: NSObject {
             _ = model.helperInstalled
             _ = model.supported
         } onChange: { [weak self] in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 self?.observeModel()
             }
         }
@@ -126,11 +125,13 @@ final class StatusItemController: NSObject {
         menu.addItem(updateItem)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(
+        let quitItem = NSMenuItem(
             title: "Quit NoLogo",
             action: #selector(quit),
             keyEquivalent: "q"
-        ))
+        )
+        quitItem.target = self
+        menu.addItem(quitItem)
 
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
@@ -200,7 +201,7 @@ final class StatusItemController: NSObject {
             defer: false
         )
         window.title = "NoLogo"
-        window.contentViewController = NSHostingController(rootView: ContentView(model: model))
+        window.contentViewController = NSHostingController(rootView: AppRootView(model: model))
         window.isReleasedWhenClosed = false
         window.center()
         window.makeKeyAndOrderFront(nil)
@@ -210,23 +211,29 @@ final class StatusItemController: NSObject {
     @objc private func openSettingsWindow() {
         NSApplication.shared.activate()
 
-        if let window = settingsWindow {
-            window.makeKeyAndOrderFront(nil)
+        guard let settingsItem = findSettingsItem(in: NSApplication.shared.mainMenu),
+              let action = settingsItem.action else {
             return
         }
 
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 620),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "NoLogo Settings"
-        window.contentViewController = NSHostingController(rootView: SettingsView(model: model))
-        window.isReleasedWhenClosed = false
-        window.center()
-        window.makeKeyAndOrderFront(nil)
-        settingsWindow = window
+        NSApplication.shared.sendAction(action, to: settingsItem.target, from: settingsItem)
+    }
+
+    private func findSettingsItem(in menu: NSMenu?) -> NSMenuItem? {
+        guard let menu else { return nil }
+
+        for item in menu.items {
+            if item.keyEquivalent == ",",
+               item.keyEquivalentModifierMask.contains(.command) {
+                return item
+            }
+
+            if let match = findSettingsItem(in: item.submenu) {
+                return match
+            }
+        }
+
+        return nil
     }
 
     @objc private func checkForUpdates() {

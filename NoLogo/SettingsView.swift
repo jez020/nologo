@@ -77,9 +77,12 @@ private struct LoginSettingsSection: View {
 struct SettingsView: View {
     var model: LogoLightModel = .shared
     @AppStorage("showDockIcon") private var showDockIcon = true
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var shortcuts = ShortcutSettings.shared
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openWindow) private var openWindow
     @State private var confirmsRemoval = false
+    @State private var confirmsReset = false
     @State private var showsError = false
     @State private var errorMessage = ""
 
@@ -136,6 +139,15 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Help") {
+                Button {
+                    confirmsReset = true
+                } label: {
+                    Label("Reset App…", systemImage: "arrow.counterclockwise")
+                        .frame(maxWidth: .infinity, minHeight: 28)
+                }
+            }
+
             Section("Info") {
                 LabeledContent("App", value: "NoLogo")
                 LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")
@@ -154,6 +166,18 @@ struct SettingsView: View {
         .onDisappear { shortcuts.stopRecording() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { shortcuts.stopRecording() }
+        }
+        .confirmationDialog("Reset NoLogo?", isPresented: $confirmsReset) {
+            Button("Reset App", role: .destructive) {
+                showDockIcon = true
+                shortcuts.restoreDefault()
+                hasCompletedOnboarding = false
+                openWindow(id: "main")
+                NSApplication.shared.keyWindow?.close()
+                NSApplication.shared.activate()
+            }
+        } message: {
+            Text("This restores NoLogo’s app preferences and starts onboarding again. The helper stays installed and the logo’s current state is unchanged.")
         }
         .confirmationDialog("Remove the logo-control helper?", isPresented: $confirmsRemoval) {
             Button("Remove Helper", role: .destructive) {

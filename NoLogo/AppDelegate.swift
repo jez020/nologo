@@ -1,6 +1,8 @@
 import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var statusItemController: StatusItemController?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Load the bundled icon directly so the Dock does not retain a cached placeholder.
         if let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
@@ -9,6 +11,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         UpdateManager.shared.start()
         ShortcutSettings.shared.activateGlobalShortcut()
+        statusItemController = StatusItemController(
+            model: .shared,
+            updates: .shared,
+            shortcuts: .shared
+        )
         UserDefaults.standard.register(defaults: ["showDockIcon": true])
         let showDockIcon = UserDefaults.standard.bool(forKey: "showDockIcon")
         NSApplication.shared.setActivationPolicy(showDockIcon ? .regular : .accessory)
