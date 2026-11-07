@@ -49,7 +49,7 @@ Wait for feed deployment to finish before publishing another release.
 ## Verification and recovery
 
 - Wait for **Publish NoLogo updates** to pass in GitHub Actions.
-- Confirm https://jez020.github.io/NoLogo/appcast.xml serves the new version.
+- Confirm https://jez020.github.io/nologo/appcast.xml serves the new version.
 - Check for Updates from an older installed, signed NoLogo build and verify installation
   and relaunch. A successful build alone does not validate the update.
 - If asset upload fails, inspect the draft release and the local output directory printed

@@ -5,7 +5,7 @@
 	<key>SUEnableInstallerLauncherService</key>
 	<false/>
 	<key>SUFeedURL</key>
-	<string>https://jez020.github.io/NoLogo/appcast.xml</string>
+	<string>https://jez020.github.io/nologo/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>CHbgs2YMu9lPwxdi1RD4liQQOb+ZdAFN9bKioTdKZqM=</string>
 </dict>
