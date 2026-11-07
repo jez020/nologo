@@ -26,7 +26,17 @@ and existing feed URL stable so installed apps keep working.
 
 For the very first release, if the feed still returns HTTP 404, also add
 `--first-release`. Omit `--publish` to prepare and validate files locally.
-Use `--notes release-notes.md` for custom GitHub release notes; otherwise GitHub generates them.
+Use `--notes release-notes.md` for a Markdown changelog shared by Sparkle and GitHub Releases;
+otherwise the script retrieves GitHub-generated notes and uses those in both places.
+Empty changelogs stop publication. Sparkle embeds the notes in the appcast, so no separate
+release-note hosting is needed. The update dialog also links to the GitHub release history.
+
+```sh
+./scripts/release.sh "/path/to/NoLogo.app" --notes release-notes.md
+```
+
+Review and update release-notes.md before each release. This affects newly generated feeds;
+already-published releases are not changed automatically.
 
 The command reads the version from the exported app, verifies signing and notarization,
 checks the Sparkle Keychain key, preserves existing feed entries, packages the app,

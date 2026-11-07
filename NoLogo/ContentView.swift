@@ -30,7 +30,7 @@ struct ContentView: View {
                 }
             } label: {
                 Text(model.buttonTitle)
-                    .frame(minWidth: 150)
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -58,10 +58,12 @@ struct ContentView: View {
                 }
             } label: {
                 Label("Settings", systemImage: "gearshape")
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
         }
         .padding(28)
-        .frame(width: 280, height: isMenuBar ? 360 : 440)
+        .frame(width: 340, height: isMenuBar ? 400 : 480)
+        .controlSize(.extraLarge)
         .task { await model.refresh() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

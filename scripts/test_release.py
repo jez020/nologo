@@ -33,6 +33,8 @@ class ReleaseTests(unittest.TestCase):
         self.calls.append(args)
         if args[0].endswith('generate_keys'):
             return self.config['SUPublicEDKey']
+        if args[:2] == ('gh', 'api') and args[2].endswith('/generate-notes'):
+            return '## Changes\n- Larger controls.\n'
         if args[0] == 'ditto':
             Path(args[-1]).write_bytes(b'archive')
         if args[0].endswith('generate_appcast'):
@@ -41,6 +43,7 @@ class ReleaseTests(unittest.TestCase):
             (self.output / 'appcast.xml').write_text(
                 '<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">'
                 '<channel><item><sparkle:version>2</sparkle:version>'
+                '<description sparkle:format="markdown">## Changes\n- Larger controls.</description>'
                 f'<enclosure url="{url}" length="7" sparkle:edSignature="{signature}"/>'
                 '</item></channel></rss>')
         return ''
@@ -59,6 +62,9 @@ class ReleaseTests(unittest.TestCase):
         self.invoke()
         self.assertFalse(any(c[:2] == ('gh', 'release') for c in self.calls))
         self.assertTrue((self.output / 'appcast.xml').exists())
+        self.assertEqual((self.output / 'NoLogo-1.1.md').read_text(), '## Changes\n- Larger controls.\n')
+        generation = next(c for c in self.calls if c[0].endswith('generate_appcast'))
+        self.assertIn('--embed-release-notes', generation)
 
     def test_upload_finishes_before_publishing(self):
         self.invoke(publish=True)
@@ -66,6 +72,20 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual([c[2] for c in writes], ['create', 'edit'])
         self.assertIn('--draft', writes[0])
         self.assertIn('--draft=false', writes[1])
+        self.assertIn(str(self.output / 'NoLogo-1.1.md'), writes[0])
+
+    def test_custom_notes_are_preserved(self):
+        notes = self.root / 'notes.md'
+        notes.write_text('## Fixed\n- Unicode: café & <text>.\n', encoding='utf-8')
+        with patch.object(release, 'run') as command:
+            self.assertEqual(release.release_notes(notes, 'v1.1', None), notes.read_text())
+            command.assert_not_called()
+
+    def test_empty_notes_stop_release(self):
+        notes = self.root / 'empty.md'
+        notes.write_text('  \n')
+        with self.assertRaisesRegex(ValueError, 'changelog is empty'):
+            release.release_notes(notes, 'v1.1', None)
 
     def test_rejects_reused_build(self):
         feed = (b'<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">'

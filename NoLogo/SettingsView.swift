@@ -47,14 +47,18 @@ private struct LoginSettingsSection: View {
 
     var body: some View {
         Section("Startup") {
-            Toggle("Open at Login", isOn: $loginSettings.opensAtLogin)
+            Toggle(isOn: $loginSettings.opensAtLogin) {
+                Text("Open at Login").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            }
                 .disabled(loginSettings.isUpdating)
 
             if loginSettings.status == .requiresApproval {
                 Text("Allow NoLogo in System Settings to open automatically when you log in.")
                     .foregroundStyle(.secondary)
-                Button("Open Login Items Settings…") {
+                Button {
                     SMAppService.openSystemSettingsLoginItems()
+                } label: {
+                    Text("Open Login Items Settings…").frame(maxWidth: .infinity, minHeight: 44)
                 }
             }
         }
@@ -84,7 +88,9 @@ struct SettingsView: View {
             LoginSettingsSection()
 
             Section("App appearance") {
-                Toggle("Show in Dock", isOn: $showDockIcon)
+                Toggle(isOn: $showDockIcon) {
+                    Text("Show in Dock").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }
                 Text("When hidden, use the menu bar lightbulb to open NoLogo, access Settings, or quit.")
                     .foregroundStyle(.secondary)
             }
@@ -94,8 +100,10 @@ struct SettingsView: View {
                 Text("The helper lets you control the logo without repeated password prompts.")
                     .foregroundStyle(.secondary)
 
-                Button("Remove Helper…", role: .destructive) {
+                Button(role: .destructive) {
                     confirmsRemoval = true
+                } label: {
+                    Text("Remove Helper…").frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .disabled(!model.helperInstalled || model.isBusy)
 
@@ -106,15 +114,20 @@ struct SettingsView: View {
 
             Section("Keyboard shortcut") {
                 LabeledContent("Toggle Logo Illumination", value: shortcuts.binding.label)
-                HStack {
-                    Button(shortcuts.isRecording ? "Cancel" : "Record Shortcut…") {
+                VStack(spacing: 12) {
+                    Button {
                         if shortcuts.isRecording {
                             shortcuts.stopRecording()
                         } else {
                             shortcuts.startRecording()
                         }
+                    } label: {
+                        Text(shortcuts.isRecording ? "Cancel" : "Record Shortcut…")
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
-                    Button("Restore Default") { shortcuts.restoreDefault() }
+                    Button { shortcuts.restoreDefault() } label: {
+                        Text("Restore Default").frame(maxWidth: .infinity, minHeight: 44)
+                    }
                         .disabled(shortcuts.binding == .standard && !shortcuts.isRecording)
                 }
                 Text(shortcuts.isRecording || !shortcuts.message.isEmpty
@@ -130,8 +143,10 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440)
-        .fixedSize(horizontal: false, vertical: true)
+        .controlSize(.extraLarge)
+        .toggleStyle(.switch)
+        .buttonStyle(.bordered)
+        .frame(minWidth: 460, idealWidth: 500, minHeight: 480, idealHeight: 680)
         .task { await model.refresh() }
         .onChange(of: showDockIcon) { _, show in
             NSApplication.shared.setActivationPolicy(show ? .regular : .accessory)

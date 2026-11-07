@@ -10,18 +10,22 @@ struct MenuBarContentView: View {
             ContentView(model: model, isMenuBar: true)
             Divider()
             HStack {
-                Button("Open App") {
+                Button {
                     openWindow(id: "main")
                     NSApplication.shared.activate()
+                } label: {
+                    Text("Open App").frame(maxWidth: .infinity, minHeight: 44)
                 }
-                Spacer()
-                Button("Quit") {
+                Button {
                     NSApplication.shared.terminate(nil)
+                } label: {
+                    Text("Quit").frame(maxWidth: .infinity, minHeight: 44)
                 }
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.bordered)
+            .controlSize(.extraLarge)
             .padding()
         }
-        .frame(width: 280)
+        .frame(width: 340)
     }
 }
