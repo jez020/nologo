@@ -6,17 +6,21 @@ import UniformTypeIdentifiers
 @MainActor
 enum DebugLogGenerator {
     private struct DebugLog: Encodable {
-        let schemaVersion = 1
+        let schemaVersion = 2
         let generatedAt: Date
         let app: AppDetails
         let system: SystemDetails
         let logoControl: LogoControlDetails
         let preferences: PreferenceDetails
+        let updates: UpdateDetails
+        let recentEvents: [DebugEventLogger.Event]
     }
 
     private struct AppDetails: Encodable {
         let version: String
         let build: String
+        let buildConfiguration: String
+        let activationPolicy: String
     }
 
     private struct SystemDetails: Encodable {
@@ -28,14 +32,22 @@ enum DebugLogGenerator {
 
     private struct LogoControlDetails: Encodable {
         let helperInstalled: Bool
+        let helperDirectoryPresent: Bool
+        let launchDaemonPresent: Bool
+        let helperProtocolVersion: Int
         let connectionState: String
     }
 
     private struct PreferenceDetails: Encodable {
         let showsDockIcon: Bool
         let completedOnboarding: Bool
-        let opensAtLogin: Bool
+        let loginItemStatus: String
         let usesDefaultShortcut: Bool
+    }
+
+    private struct UpdateDetails: Encodable {
+        let canCheckForUpdates: Bool
+        let configurationState: String
     }
 
     static func save(
@@ -48,7 +60,9 @@ enum DebugLogGenerator {
             generatedAt: Date(),
             app: AppDetails(
                 version: bundleValue(for: "CFBundleShortVersionString"),
-                build: bundleValue(for: "CFBundleVersion")
+                build: bundleValue(for: "CFBundleVersion"),
+                buildConfiguration: buildConfiguration,
+                activationPolicy: activationPolicy
             ),
             system: SystemDetails(
                 macOSVersion: ProcessInfo.processInfo.operatingSystemVersionString,
@@ -58,14 +72,27 @@ enum DebugLogGenerator {
             ),
             logoControl: LogoControlDetails(
                 helperInstalled: model.helperInstalled,
+                helperDirectoryPresent: FileManager.default.fileExists(
+                    atPath: LogoLightHelperConfiguration.installationDirectory
+                ),
+                launchDaemonPresent: FileManager.default.fileExists(
+                    atPath: LogoLightHelperConfiguration.launchDaemonPath
+                ),
+                helperProtocolVersion: LogoLightHelperConfiguration.protocolVersion,
                 connectionState: connectionState(for: model.isEnabled)
             ),
             preferences: PreferenceDetails(
                 showsDockIcon: showsDockIcon,
                 completedOnboarding: completedOnboarding,
-                opensAtLogin: SMAppService.mainApp.status == .enabled,
+                loginItemStatus: loginItemStatus,
                 usesDefaultShortcut: usesDefaultShortcut
-            )
+            ),
+            updates: UpdateDetails(
+                canCheckForUpdates: UpdateManager.shared.canCheckForUpdates,
+                configurationState: UpdateManager.shared.configurationMessage == nil
+                    ? "configured" : "unavailable"
+            ),
+            recentEvents: DebugEventLogger.events
         )
 
         let encoder = JSONEncoder()
@@ -99,6 +126,33 @@ enum DebugLogGenerator {
         case false: "connected_off"
         case nil: "unavailable"
         }
+    }
+
+    private static var loginItemStatus: String {
+        switch SMAppService.mainApp.status {
+        case .notRegistered: "not_registered"
+        case .enabled: "enabled"
+        case .requiresApproval: "requires_approval"
+        case .notFound: "not_found"
+        @unknown default: "unknown"
+        }
+    }
+
+    private static var activationPolicy: String {
+        switch NSApplication.shared.activationPolicy() {
+        case .regular: "regular"
+        case .accessory: "accessory"
+        case .prohibited: "prohibited"
+        @unknown default: "unknown"
+        }
+    }
+
+    private static var buildConfiguration: String {
+        #if DEBUG
+        "debug"
+        #else
+        "release"
+        #endif
     }
 
     private static var architecture: String {

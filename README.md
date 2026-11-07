@@ -15,8 +15,8 @@ NoLogo is a small macOS app for turning your MacBook Pro’s logo light on or of
 
 ## Requirements
 
-- macOS 27.2 or later for the current release
-- A supported MacBook Pro with a PROLED XDR display
+- macOS 27.0.1 or later for the current release
+- A supported MacBook Pro with a PROLED XDR display (Any model with a light up apple logo)
 - Administrator approval during first-time setup
 
 Supported model identifiers: `Mac17,10`, `Mac17,11`, `Mac17,12`, and `Mac17,13`.
