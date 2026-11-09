@@ -11,7 +11,7 @@ enum LogoLightHelperConfiguration {
     static let serviceName = "com.jez020.nologo.helper"
     static let installationDirectory = "/Library/PrivilegedHelperTools/com.jez020.nologo.helper"
     static let launchDaemonPath = "/Library/LaunchDaemons/com.jez020.nologo.helper.plist"
-    static let protocolVersion = 3
+    static let protocolVersion = 4
 
     // Both peers must be this app, signed by this project's development team.
     // Update this requirement if the app's bundle identifier or signing team changes.
@@ -121,11 +121,17 @@ final class LogoLightHelper: NSObject, NSXPCListenerDelegate, LogoLightHelperPro
             kCFPreferencesCurrentUser, kCFPreferencesAnyHost
         )
         guard let value else { return true }
-        guard let mode = value as? NSNumber, mode.intValue == 0 else {
-            throw NSError(domain: "LogoLight", code: 5, userInfo: [
-                NSLocalizedDescriptionKey: "The logo has an unrecognized illumination mode."
-            ])
+
+        if let mode = value as? NSNumber {
+            return mode.intValue != 0
         }
-        return false
+
+        if let mode = value as? String, let numericMode = Int(mode) {
+            return numericMode != 0
+        }
+
+        // Only an integer zero disables illumination. Any other stored value leaves
+        // CoreBrightness using its default enabled behavior.
+        return true
     }
 }
